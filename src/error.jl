@@ -27,30 +27,47 @@ CONDITIONS OF OSMC-PL.
 =#
 
 """
+Parser error
+"""
+struct ParseError <: Exception
+  errmsg::AbstractString
+end
+Base.showerror(io::IO, exc::ParseError) = print(io, string("Parse error: ",exc.errmsg))
+
+"""
+Lexer error
+"""
+struct LexerError <: Exception
+  errmsg::AbstractString
+end
+Base.showerror(io::IO, exc::LexerError) = print(io, string("Lexer error: ",exc.errmsg))
+
+
+"""
 omc process error
 """
 struct OMCError <: Exception
-    cmd::Cmd
-    stdout::IOBuffer
-    stderr::IOBuffer
+  cmd::Cmd
+  stdout::IOBuffer
+  stderr::IOBuffer
 end
 """
 Show error and close IOBuffer
 """
 function Base.showerror(io::IO, e::OMCError)
-    println(io, "OMCError ")
-    println(io, "Command $(e.cmd) failed")
-    println(io,  String(take!(e.stdout)))
-    print(io, String(take!(e.stderr)))
-    close(e.stdout)
-    close(e.stderr)
+  println(io, "OMCError ")
+  println(io, "Command $(e.cmd) failed")
+  println(io,  String(take!(e.stdout)))
+  print(io, String(take!(e.stderr)))
+  close(e.stdout)
+  close(e.stderr)
 end
 
 """
 Timeout error
 """
 struct TimeoutError <: Exception
-    msg::String
+  msg::String
 end
 function Base.showerror(io::IO, e::TimeoutError)
   println(io, "TimeoutError")

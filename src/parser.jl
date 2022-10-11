@@ -12,18 +12,8 @@ end
 struct Record
 end
 
-struct ParseError <: Exception
-  errmsg::AbstractString
-end
-
-struct LexerError <: Exception
-  errmsg::AbstractString
-end
-
 include("memory.jl")
 include("lexer.jl")
-
-show(io::IO, exc::ParseError) = print(io, string("Parse error: ",exc.errmsg))
 
 function parseOM(t::Union{Int,Float64,String,Bool}, tokens)
   return t
