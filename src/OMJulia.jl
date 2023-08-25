@@ -115,6 +115,11 @@ mutable struct OMCSession
         else
             args4 = randstring(10)
         end
+
+        # Open stream
+        outStream = Base.BufferStream()
+        errStream = Base.BufferStream()
+
         if (Base.Sys.iswindows())
             if (omc !== nothing)
                 ompath = replace(omc, r"[/\\]+" => "/")
@@ -122,7 +127,7 @@ mutable struct OMCSession
                 ## create a omc process with OPENMODELICAHOME set to custom directory
                 @info("Setting environment variable OPENMODELICAHOME=\"$dirpath\" for this session.")
                 withenv("OPENMODELICAHOME" => dirpath) do
-                    this.omcprocess = open(pipeline(`$omc $args2 $args3$args4`, stdout="stdout.log", stderr="stderr.log"))
+                    this.omcprocess = open(pipeline(`$omc $args2 $args3$args4`, stdout=outStream, stderr=errStream))
                 end
             else
                 omhome = ""
@@ -136,7 +141,7 @@ mutable struct OMCSession
                 # ompath=joinpath(omhome,"bin")
                 ## create a omc process with default OPENMODELICAHOME set in environment variable
                 withenv("OPENMODELICAHOME" => omhome) do
-                    this.omcprocess = open(pipeline(`$ompath $args2 $args3$args4`, stdout="stdout.log", stderr="stderr.log"))
+                    this.omcprocess = open(pipeline(`$ompath $args2 $args3$args4`, stdout=outStream, stderr=errStream))
                 end
             end
             portfile = join(["openmodelica.port.julia.",args4])
@@ -145,15 +150,15 @@ mutable struct OMCSession
                 # add omc to path if not exist
                 ENV["PATH"] = ENV["PATH"] * "/opt/openmodelica/bin"
                 if (omc !== nothing)
-                    this.omcprocess = open(pipeline(`$omc $args2 $args3$args4`, stdout="stdout.log", stderr="stderr.log"))
+                    this.omcprocess = open(pipeline(`$omc $args2 $args3$args4`, stdout=outStream, stderr=errStream))
                 else
-                    this.omcprocess = open(pipeline(`omc $args2 $args3$args4`, stdout="stdout.log", stderr="stderr.log"))
+                    this.omcprocess = open(pipeline(`omc $args2 $args3$args4`, stdout=outStream, stderr=errStream))
                 end
             else
                 if (omc !== nothing)
-                    this.omcprocess = open(pipeline(`$omc $args2 $args3$args4`, stdout="stdout.log", stderr="stderr.log"))
+                    this.omcprocess = open(pipeline(`$omc $args2 $args3$args4`, stdout=outStream, stderr=errStream))
                 else
-                    this.omcprocess = open(pipeline(`omc $args2 $args3$args4`, stdout="stdout.log", stderr="stderr.log"))
+                    this.omcprocess = open(pipeline(`omc $args2 $args3$args4`, stdout=outStream, stderr=errStream))
                 end
             end
             portfile = join(["openmodelica.",ENV["USER"],".port.julia.",args4])
@@ -168,12 +173,15 @@ mutable struct OMCSession
         end
         # Catch omc error
         if process_exited(this.omcprocess) && this.omcprocess.exitcode != 0
-            throw(OMCError(this.omcprocess.cmd, "stdout.log", "stderr.log"))
-        else
-            @debug read(e.stdout_file, String)
-            @debug read(e.stderr_file, String)
-            rm.(["stdout.log", "stderr.log"], force=true)
+            throw(OMCError(this.omcprocess.cmd, outStream, errStream))
         end
+
+        # Close stream
+        @debug read(outStream, String)
+        @debug read(errStream, String)
+        close(outStream)
+        close(errStream)
+
         if tries >= 100
             throw(TimeoutError("ZMQ server port file \"$fullpath\" not created yet."))
         end
@@ -659,14 +667,17 @@ function simulate(omc; resultfile=nothing, simflags=nothing, verbose=true)
             if (omc.inputFlag == true)
                 createcsvdata(omc)
                 csvinput = join(["-csvInput=",omc.csvfile])
-                # run(pipeline(`$getexefile $overridevar $csvinput`,stdout="log.txt",stderr="error.txt"))
             else
                 csvinput = ""
-                # run(pipeline(`$getexefile $overridevar`,stdout="log.txt",stderr="error.txt"))
             end
             # remove empty args in cmd objects
             cmd = filter!(e -> e ≠ "", [getexefile,overridevar,csvinput,r,simflags])
             # println(cmd)
+
+            # Open stream
+            outStream = Base.BufferStream()
+            errStream = Base.BufferStream()
+
             if (Base.Sys.iswindows())
                 installPath = sendExpression(omc, "getInstallationDirectoryPath()")
                 envPath = ENV["PATH"]
@@ -676,18 +687,24 @@ function simulate(omc; resultfile=nothing, simflags=nothing, verbose=true)
                     if verbose
                         run(pipeline(`$cmd`))
                     else
-                        run(pipeline(`$cmd`, stdout="log.txt", stderr="error.txt"))
+                        run(pipeline(`$cmd`, stdout=outStream, stderr=errStream))
                     end
                 end
             else
                 if verbose
                     run(pipeline(`$cmd`))
                 else
-                    run(pipeline(`$cmd`, stdout="log.txt", stderr="error.txt"))
+                    run(pipeline(`$cmd`, stdout=outStream, stderr=errStream))
                 end
             end
             # omc.resultfile=replace(joinpath(omc.tempdir,join([omc.modelname,"_res.mat"])),r"[/\\]+" => "/")
             omc.simulationFlag = true
+
+            # Close stream
+            @debug read(outStream, String)
+            @debug read(errStream, String)
+            close(outStream)
+            close(errStream)
         else
             return println("! Simulation Failed")
         end

@@ -31,8 +31,8 @@ omc process error
 """
 struct OMCError <: Exception
     cmd::Cmd
-    stdout_file::String
-    stderr_file::String
+    stdoutStream::Base.BufferStream
+    stderrStream::Base.BufferStream
 end
 """
 Show error from log files
@@ -40,9 +40,10 @@ Show error from log files
 function Base.showerror(io::IO, e::OMCError)
     println(io, "OMCError ")
     println(io, "Command $(e.cmd) failed")
-    println(io,  read(e.stdout_file, String))
-    print(io, read(e.stderr_file, String))
-    rm.(["stdout.log", "stderr.log"], force=true)
+    println(io,  read(e.stdoutStream, String))
+    print(io, read(e.stderrStream, String))
+    close(outStream)
+    close(errStream)
 end
 
 """
