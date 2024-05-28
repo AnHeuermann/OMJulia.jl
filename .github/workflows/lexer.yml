@@ -52,5 +52,4 @@ jobs:
       - name: Fail if lexer.jl isn't up-to-date
         if: steps.changed-lexer.outputs.files_changed == 'true'
         run: |
-          echo "::error file=src/lexer.jl,line=1::Generated lexer.jl outdated."
-          exit 1
+          echo "::error title=Lexer not up-to-date::Generated src/lexer.jl has uncommitted changes."
