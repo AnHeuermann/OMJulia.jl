@@ -37,13 +37,13 @@ for a complete list of all functions.
     Some characters in argument `expr` need to be escaped.
     E.g. `"` becomes `\\"`.
     For example scripting API call
-    
+
     ```modelica
     loadFile("/path/to/M.mo")
     ```
-    
+
     will translate to
-    
+
     ```julia
     sendExpression(omc, "loadFile(\\"/path/to/M.mo\\")")
     ```

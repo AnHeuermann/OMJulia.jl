@@ -1,0 +1,9 @@
+[deps]
+Automa = "67c07d97-cdcb-5c2c-af73-a7f9c32a568b"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+OMJulia = "0f4fe800-344e-11e9-2949-fb537ad918e1"
+
+[compat]
+Automa = "0.7"
+MacroTools = "0.5.4"
+julia = "1.6"

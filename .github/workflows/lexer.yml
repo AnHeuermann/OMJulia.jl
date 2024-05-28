@@ -1,0 +1,51 @@
+name: Lexer up-to-date
+
+on:
+  push:
+    branches: ['master', 'installPackage']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check-lexer:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        julia-version: ['1.6']
+        julia-arch: ['x64']
+        os: ['ubuntu-latest']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Set up Julia"
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+
+      - name: Cache Julia
+        uses: julia-actions/cache@v2
+
+      - name: Install dependencies
+        run: julia --project=bin/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+
+      - name: Build Lexer
+        run: julia --project=bin/ -e 'include("bin/generate_lexer.jl")'
+
+      - name: Check for changes in src/lexer.jl
+        id: changed-lexer
+        uses: tj-actions/changed-files@v44
+        with:
+          since_last_remote_commit: true
+          files: |
+            src/lexer.jl
+
+      - name: Archive changed lexer.jl
+        if: steps.changed-lexer.outputs.any_modified == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lexer.jl
+          path: ${{ steps.changed-markdown-files.outputs.all_changed_files }}

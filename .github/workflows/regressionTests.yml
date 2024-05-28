@@ -54,7 +54,7 @@ jobs:
         run: julia --project=regression-tests/. -e 'include("regression-tests/regressionTests.jl"); runTests(libraries, models)'
 
       - name: Archive FMUs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fmu-export
           path: regression-tests/temp/**/*.fmu
