@@ -37,15 +37,20 @@ jobs:
 
       - name: Check for changes in src/lexer.jl
         id: changed-lexer
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/verify-changed-files@v20
         with:
-          since_last_remote_commit: true
           files: |
             src/lexer.jl
 
       - name: Archive changed lexer.jl
-        if: steps.changed-lexer.outputs.any_modified == 'true'
+        if: steps.changed-lexer.outputs.files_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: lexer.jl
-          path: ${{ steps.changed-markdown-files.outputs.all_changed_files }}
+          path: ${{ steps.verify-changed-files.outputs.changed_files }}
+
+      - name: Fail if lexer.jl isn't up-to-date
+        if: steps.changed-lexer.outputs.files_changed == 'true'
+        run: |
+          echo "::error file=src/lexer.jl,line=1::Generated lexer.jl outdated."
+          exit 1
