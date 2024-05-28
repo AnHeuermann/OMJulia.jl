@@ -30,7 +30,7 @@ jobs:
         uses: julia-actions/cache@v2
 
       - name: Install dependencies
-        run: julia --project=bin/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=bin/ -e 'using Pkg; Pkg.instantiate()'
 
       - name: Build Lexer
         run: julia --project=bin/ -e 'include("bin/generate_lexer.jl")'
@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lexer.jl
-          path: ${{ steps.verify-changed-files.outputs.changed_files }}
+          path: src/lexer.jl
 
       - name: Fail if lexer.jl isn't up-to-date
         if: steps.changed-lexer.outputs.files_changed == 'true'
