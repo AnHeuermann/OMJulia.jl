@@ -53,3 +53,4 @@ jobs:
         if: steps.changed-lexer.outputs.files_changed == 'true'
         run: |
           echo "::error title=Lexer not up-to-date::Generated src/lexer.jl has uncommitted changes."
+          exit 1
